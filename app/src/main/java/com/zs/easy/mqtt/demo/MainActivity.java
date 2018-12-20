@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 
 import com.zs.easy.mqtt.EasyMqttService;
 import com.zs.easy.mqtt.IEasyMqttCallBack;
@@ -12,12 +13,18 @@ import com.zs.easy.mqtt.IEasyMqttCallBack;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
 
-/**
+import java.util.UUID;
+
+/*
  * @author zhangshun
  */
 public class MainActivity extends Activity {
 
     private EasyMqttService mqttService;
+
+    private String TAG = "MainActivity";
+
+
     /**
      * 回调时使用
      */
@@ -37,21 +44,24 @@ public class MainActivity extends Activity {
         connect();
 
         if (isConnected()) {
+            Log.d(TAG, "开始订阅 ...");
             subscribe();
         }
+        else
+            Log.d(TAG, "未连接，无法订阅 ...");
 
-        if (isConnected()) {
-            //消息内容
-            String msg = "test";
-            //消息主题
-            String topic = "a";
-            //消息策略
-            int qos = 0;
-            //是否保留
-            boolean retained = false;
-            //发布消息
-            publish(msg, topic, qos, retained);
-        }
+//        if (isConnected()) {
+//            //消息内容
+//            String msg = "test";
+//            //消息主题
+//            String topic = "a";
+//            //消息策略
+//            int qos = 0;
+//            //是否保留
+//            boolean retained = false;
+//            //发布消息
+//            publish(msg, topic, qos, retained);
+//        }
 
 //        disconnect();
 
@@ -91,12 +101,14 @@ public class MainActivity extends Activity {
      * 订阅主题 这里订阅三个主题分别是"a", "b", "c"
      */
     private void subscribe() {
-        String[] topics = new String[]{"a", "b", "c"};
+        Log.d("MainActivity","开始订阅消息 ...");
+
+        String[] topics = new String[]{"/test"};
         //主题对应的推送策略 分别是0, 1, 2 建议服务端和客户端配置的主题一致
         // 0 表示只会发送一次推送消息 收到不收到都不关心
         // 1 保证能收到消息，但不一定只收到一条
         // 2 保证收到切只能收到一条消息
-        int[] qoss = new int[]{0, 1, 2};
+        int[] qoss = new int[]{0};
         mqttService.subscribe(topics, qoss);
     }
 
@@ -104,6 +116,7 @@ public class MainActivity extends Activity {
      * 连接Mqtt服务器
      */
     private void connect() {
+
         mqttService.connect(new IEasyMqttCallBack() {
             @Override
             public void messageArrived(String topic, String message, int qos) {
@@ -123,6 +136,7 @@ public class MainActivity extends Activity {
             @Override
             public void connectSuccess(IMqttToken arg0) {
                 //连接成功
+                subscribe();
             }
 
             @Override
@@ -142,11 +156,13 @@ public class MainActivity extends Activity {
                 //设置不清除回话session 可收到服务器之前发出的推送消息
                 .cleanSession(false)
                 //唯一标示 保证每个设备都唯一就可以 建议 imei
-                .clientId("your clientId")
+                .clientId("android-" + UUID.randomUUID().toString())
                 //mqtt服务器地址 格式例如：tcp://10.0.261.159:1883
-                .serverUrl("your mqtt servier url")
+                .serverUrl("tcp://47.105.125.122:1883")
                 //心跳包默认的发送间隔
                 .keepAliveInterval(20)
+                .userName("xopcore")
+                .passWord("123@069")
                 //构建出EasyMqttService 建议用application的context
                 .bulid(this.getApplicationContext());
     }
